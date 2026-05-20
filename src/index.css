@@ -1,0 +1,43 @@
+:root {
+  --bg-base: #F4F5F7;
+  --bg-surface: #FFFFFF;
+  --bg-hover: #FAFAFA;
+  --bg-input: #F4F5F7;
+  --border: #E8E9EC;
+  --border-mid: #D1D5DB;
+  --text-primary: #111111;
+  --text-body: #374151;
+  --text-muted: #6B7280;
+  --text-faint: #9CA3AF;
+  --accent: #00C27A;
+  --accent-light: #ECFDF5;
+  --accent-border: #A7F3D0;
+  --accent-text: #065F46;
+  --red: #EF4444;
+  --red-light: #FEF2F2;
+  --red-border: #FECACA;
+  --red-text: #991B1B;
+  --amber: #F59E0B;
+  --amber-light: #FFFBEB;
+  --amber-border: #FDE68A;
+  --amber-text: #92400E;
+  --blue: #3B82F6;
+  --blue-light: #EFF6FF;
+  --purple: #8B5CF6;
+  --purple-light: #F5F3FF;
+  --pink: #EC4899;
+  --pink-light: #FDF2F8;
+  --cyan: #06B6D4;
+  --cyan-light: #ECFEFF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type=number] { -moz-appearance: textfield; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
