@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { CURRENCIES } from '../constants';
-import { formatCurrency, toPrimary } from '../utils';
 
 export default function IncomeBar({ incomeSources, setIncomeSources, primaryCurrency, totalIncome, unallocated }) {
   const [showSources, setShowSources] = useState(false);

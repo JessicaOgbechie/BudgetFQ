@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { CATEGORIES } from '../constants';
-import { getDaysUntil, formatCurrency } from '../utils';
 
 export default function ForecastTab({ allocations, totalIncome, primaryCurrency, bills, salaryDay, setSalaryDay }) {
   const today = new Date();
@@ -14,7 +13,6 @@ export default function ForecastTab({ allocations, totalIncome, primaryCurrency,
   const dailyLimit = daysUntil > 0 ? unallocatedAmt / daysUntil : 0;
 
   const recurringBills = bills.filter(b => b.recurring).sort((a, b) => a.dueDay - b.dueDay);
-  const allCats = CATEGORIES;
 
   const [dayErrors, setDayErrors] = useState('');
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { CATEGORIES } from '../constants';
-import { formatCurrency } from '../utils';
 
 export default function WhatIfSimulator({ totalIncome, primaryCurrency }) {
   const [rows, setRows] = useState([{ id: 1, catKey: 'food', amount: '' }]);

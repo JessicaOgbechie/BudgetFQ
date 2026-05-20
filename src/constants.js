@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 
 export const EXCHANGE_RATES = { '€': 1, '£': 0.86, '$': 1.08, '₦': 0.00067, 'kr': 0.088 };
 
