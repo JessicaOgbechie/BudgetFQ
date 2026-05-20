@@ -107,7 +107,7 @@ export default function App() {
       <Header primaryCurrency={primaryCurrency} setPrimaryCurrency={setPrimaryCurrency} state={state} totalIncome={totalIncome} />
       <IncomeBar incomeSources={incomeSources} setIncomeSources={setIncomeSources} primaryCurrency={primaryCurrency} totalIncome={totalIncome} unallocated={unallocated} />
       <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main style={{ padding: 24, maxWidth: 880, margin: '0 auto' }}>
+      <main style={{ padding: 'clamp(12px, 4vw, 24px)', maxWidth: 880, margin: '0 auto' }}>
         {!storageAvailable && (
           <AlertBanner variant="warning" style={{ marginBottom: 16 }}>
             Data will not be saved in this session. localStorage is unavailable.

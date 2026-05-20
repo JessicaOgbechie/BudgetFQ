@@ -41,3 +41,12 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 input[type=number] { -moz-appearance: textfield; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Mobile improvements */
+@media (max-width: 600px) {
+  body { font-size: 14px; }
+}
+
+/* Smooth scrolling on iOS */
+* { -webkit-tap-highlight-color: transparent; }
+input, select, button { touch-action: manipulation; }
