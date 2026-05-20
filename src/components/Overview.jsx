@@ -123,7 +123,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
   );
 }
 
-export default function Overview({ allocations, setAllocations, customCategories, setCustomCategories, totalIncome, primaryCurrency }) {
+export default function Overview({ allocations, setAllocations, customCategories, setCustomCategories, deletedCoreKeys, setDeletedCoreKeys, totalIncome, primaryCurrency }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCat, setNewCat] = useState({ label: '', pct: '' });
   const [error, setError] = useState('');
@@ -136,10 +136,12 @@ export default function Overview({ allocations, setAllocations, customCategories
   const committed = (totalIncome * total) / 100;
   const free = totalIncome * Math.max(0, rem) / 100;
 
-  const coreRows = CATEGORIES.map(cat => ({
-    ...cat,
-    label: coreLabelOverrides[cat.key] || cat.label,
-  }));
+  const coreRows = CATEGORIES
+    .filter(cat => !deletedCoreKeys.includes(cat.key))
+    .map(cat => ({
+      ...cat,
+      label: coreLabelOverrides[cat.key] || cat.label,
+    }));
 
   const customRows = customCategories.map(cc => ({
     ...cc,
@@ -157,8 +159,16 @@ export default function Overview({ allocations, setAllocations, customCategories
     setCustomCategories(prev => prev.map(c => c.key === key ? { ...c, label: newLabel } : c));
   };
 
-  const handleDeleteCustom = (key) => {
-    setCustomCategories(prev => prev.filter(c => c.key !== key));
+
+
+  const handleDeleteCategory = (key) => {
+    const isCustom = customCategories.some(c => c.key === key);
+    if (isCustom) {
+      setCustomCategories(prev => prev.filter(c => c.key !== key));
+    } else {
+      // Hide core category by tracking its key
+      setDeletedCoreKeys(prev => [...prev, key]);
+    }
     setAllocations(prev => { const next = { ...prev }; delete next[key]; return next; });
   };
 
@@ -224,9 +234,9 @@ export default function Overview({ allocations, setAllocations, customCategories
               currency={primaryCurrency}
               totalIncome={totalIncome}
               onChange={val => setAllocations(prev => ({ ...prev, [cat.key]: parseFloat(val) || 0 }))}
-              onDelete={() => handleDeleteCustom(cat.key)}
+              onDelete={() => handleDeleteCategory(cat.key)}
               onLabelChange={newLabel => isCustom ? handleCustomRename(cat.key, newLabel) : handleCoreRename(cat.key, newLabel)}
-              canDelete={isCustom}
+              canDelete={allRows.length > 1}
             />
           );
         })}
@@ -276,6 +286,39 @@ export default function Overview({ allocations, setAllocations, customCategories
         >
           <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: 15 }} /> Add custom category
         </button>
+      )}
+
+      {/* Restore deleted core categories */}
+      {deletedCoreKeys.length > 0 && (
+        <div style={{ marginTop: 12, padding: '12px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 8 }}>
+            Removed categories
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {CATEGORIES.filter(c => deletedCoreKeys.includes(c.key)).map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => {
+                  setDeletedCoreKeys(prev => prev.filter(k => k !== cat.key));
+                  setAllocations(prev => ({ ...prev, [cat.key]: cat.defaultPct || 0 }));
+                }}
+                style={{
+                  background: 'var(--bg-input)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '6px 12px', fontSize: 13,
+                  color: 'var(--text-muted)', cursor: 'pointer',
+                  fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                aria-label={`Restore ${cat.label} category`}
+              >
+                <i className={`ti ${cat.icon}`} aria-hidden="true" style={{ fontSize: 13, color: cat.color }} />
+                + Restore {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

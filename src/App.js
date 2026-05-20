@@ -36,6 +36,7 @@ export default function App() {
   const [allocations, setAllocations] = useState(defaultState.allocations);
   const [bills, setBills] = useState(defaultState.bills);
   const [customCategories, setCustomCategories] = useState(defaultState.customCategories);
+  const [deletedCoreKeys, setDeletedCoreKeys] = useState([]);
   const [investProfile, setInvestProfile] = useState(defaultState.investProfile);
   const [salaryDay, setSalaryDay] = useState(defaultState.salaryDay);
   const [lastOpenedMonth, setLastOpenedMonth] = useState(defaultState.lastOpenedMonth);
@@ -63,6 +64,7 @@ export default function App() {
       if (saved.primaryCurrency) setPrimaryCurrency(saved.primaryCurrency);
       if (saved.allocations) setAllocations(saved.allocations);
       if (saved.customCategories) setCustomCategories(saved.customCategories);
+      if (saved.deletedCoreKeys) setDeletedCoreKeys(saved.deletedCoreKeys);
       if (saved.investProfile !== undefined) setInvestProfile(saved.investProfile);
       if (saved.salaryDay) setSalaryDay(saved.salaryDay);
 
@@ -94,8 +96,8 @@ export default function App() {
 
   useEffect(() => {
     if (!initialized) return;
-    saveStore(PRIMARY_KEY, { incomeSources, primaryCurrency, allocations, bills, customCategories, investProfile, salaryDay, lastOpenedMonth: currentMonthId() });
-  }, [initialized, incomeSources, primaryCurrency, allocations, bills, customCategories, investProfile, salaryDay]);
+    saveStore(PRIMARY_KEY, { incomeSources, primaryCurrency, allocations, bills, customCategories, deletedCoreKeys, investProfile, salaryDay, lastOpenedMonth: currentMonthId() });
+  }, [initialized, incomeSources, primaryCurrency, allocations, bills, customCategories, deletedCoreKeys, investProfile, salaryDay]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -113,7 +115,7 @@ export default function App() {
             Data will not be saved in this session. localStorage is unavailable.
           </AlertBanner>
         )}
-        {activeTab === 'overview' && <Overview allocations={allocations} setAllocations={setAllocations} customCategories={customCategories} setCustomCategories={setCustomCategories} totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
+        {activeTab === 'overview' && <Overview allocations={allocations} setAllocations={setAllocations} customCategories={customCategories} setCustomCategories={setCustomCategories} deletedCoreKeys={deletedCoreKeys} setDeletedCoreKeys={setDeletedCoreKeys} totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
         {activeTab === 'bills' && <PriorityBills bills={bills} setBills={setBills} primaryCurrency={primaryCurrency} />}
         {activeTab === 'invest' && <InvestScore allocations={allocations} totalIncome={totalIncome} primaryCurrency={primaryCurrency} investProfile={investProfile} setInvestProfile={setInvestProfile} />}
         {activeTab === 'whatif' && <WhatIfSimulator totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
