@@ -3,22 +3,47 @@ import { CATEGORIES, CUSTOM_CATEGORY_COLORS } from '../constants';
 import AlertBanner from './AlertBanner';
 import ConfirmInline from './ConfirmInline';
 
-function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelete, onLabelChange, canDelete }) {
+function AllocationRow({ cat, pct, amt, currency, totalIncome, onChangeAmount, onChangePct, onDelete, onLabelChange, canDelete }) {
   const [editingLabel, setEditingLabel] = useState(false);
   const [labelDraft, setLabelDraft] = useState(cat.label);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Local draft for the amount input so typing feels instant
+  const [amtDraft, setAmtDraft] = useState('');
+  const [amtFocused, setAmtFocused] = useState(false);
 
   const saveLabel = () => {
     if (labelDraft.trim()) onLabelChange(labelDraft.trim());
     setEditingLabel(false);
   };
 
-  return (
-    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'transparent', transition: 'background 0.1s' }}
-      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+  const handleAmtFocus = () => {
+    setAmtFocused(true);
+    setAmtDraft(amt > 0 ? String(Math.round(amt)) : '');
+  };
 
-      {/* Top row: icon + label + controls */}
+  const handleAmtChange = (val) => {
+    setAmtDraft(val);
+    const num = parseFloat(val) || 0;
+    if (totalIncome > 0) {
+      onChangeAmount(num);
+    }
+  };
+
+  const handleAmtBlur = () => {
+    setAmtFocused(false);
+    const num = parseFloat(amtDraft) || 0;
+    onChangeAmount(num);
+  };
+
+  const displayAmt = amtFocused ? amtDraft : (totalIncome ? Math.round(amt).toString() : '');
+
+  return (
+    <div
+      style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'transparent', transition: 'background 0.1s' }}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      {/* Top row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
 
         {/* Icon chip */}
@@ -26,7 +51,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
           <i className={`ti ${cat.icon}`} aria-hidden="true" style={{ fontSize: 16, color: cat.color }} />
         </div>
 
-        {/* Label — editable on tap */}
+        {/* Label — tap to rename */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {editingLabel ? (
             <input
@@ -34,7 +59,10 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
               value={labelDraft}
               onChange={e => setLabelDraft(e.target.value)}
               onBlur={saveLabel}
-              onKeyDown={e => { if (e.key === 'Enter') saveLabel(); if (e.key === 'Escape') { setLabelDraft(cat.label); setEditingLabel(false); } }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') saveLabel();
+                if (e.key === 'Escape') { setLabelDraft(cat.label); setEditingLabel(false); }
+              }}
               maxLength={30}
               aria-label="Edit category name"
               style={{
@@ -48,10 +76,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
             <div
               onClick={() => { setLabelDraft(cat.label); setEditingLabel(true); }}
               title="Tap to rename"
-              style={{
-                fontSize: 14, fontWeight: 500, color: 'var(--text-body)',
-                cursor: 'text', display: 'flex', alignItems: 'center', gap: 6,
-              }}
+              style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-body)', cursor: 'text', display: 'flex', alignItems: 'center', gap: 6 }}
             >
               {cat.label}
               <i className="ti ti-pencil" aria-hidden="true" style={{ fontSize: 11, color: 'var(--text-faint)', opacity: 0.6 }} />
@@ -59,27 +84,47 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
           )}
         </div>
 
-        {/* Percentage input */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+        {/* Amount input — primary control */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-faint)', fontFamily: 'Sora, sans-serif' }}>{currency}</span>
           <input
-            type="number" min="0" max="100" step="0.5" value={pct}
-            onChange={e => onChange(e.target.value)}
-            aria-label={`${cat.label} percentage`}
+            type="number"
+            min="0"
+            step="1"
+            value={displayAmt}
+            placeholder={totalIncome ? '0' : '—'}
+            disabled={!totalIncome}
+            onFocus={handleAmtFocus}
+            onChange={e => handleAmtChange(e.target.value)}
+            onBlur={handleAmtBlur}
+            aria-label={`${cat.label} amount`}
             style={{
-              width: 52, background: 'var(--bg-input)', border: '1px solid var(--border)',
-              borderRadius: 7, color: 'var(--text-primary)', fontFamily: 'DM Sans, sans-serif',
-              fontSize: 14, textAlign: 'center', padding: '6px 4px', outline: 'none',
+              width: 72,
+              background: totalIncome ? 'var(--bg-input)' : 'transparent',
+              border: `1px solid ${amtFocused ? 'var(--accent)' : 'var(--border)'}`,
+              borderRadius: 7,
+              color: 'var(--text-primary)',
+              fontFamily: 'Sora, sans-serif',
+              fontSize: 14,
+              fontWeight: 600,
+              textAlign: 'right',
+              padding: '6px 8px',
+              outline: 'none',
+              transition: 'border-color 0.15s',
+              cursor: totalIncome ? 'text' : 'default',
             }}
           />
-          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>%</span>
         </div>
 
-        {/* Amount */}
-        <div style={{ width: 64, textAlign: 'right', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Sora, sans-serif', flexShrink: 0 }}>
-          {totalIncome ? currency + Math.round(amt).toLocaleString() : '—'}
+        {/* Percentage — calculated, read-only display */}
+        <div style={{
+          width: 44, textAlign: 'right', fontSize: 13,
+          fontWeight: 500, color: 'var(--text-faint)', flexShrink: 0,
+        }}>
+          {totalIncome ? pct.toFixed(1) + '%' : '—'}
         </div>
 
-        {/* Delete button */}
+        {/* Delete */}
         {canDelete && (
           <button
             onClick={() => setConfirmDelete(v => !v)}
@@ -98,7 +143,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
         )}
       </div>
 
-      {/* Progress bar — full width */}
+      {/* Progress bar */}
       <div style={{ background: '#F3F4F6', borderRadius: 3, height: 5 }}>
         <div style={{
           height: 5, borderRadius: 3,
@@ -109,7 +154,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
         }} />
       </div>
 
-      {/* Inline delete confirm */}
+      {/* Delete confirm */}
       {confirmDelete && (
         <div style={{ marginTop: 10 }}>
           <ConfirmInline
@@ -125,10 +170,8 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChange, onDelet
 
 export default function Overview({ allocations, setAllocations, customCategories, setCustomCategories, deletedCoreKeys, setDeletedCoreKeys, totalIncome, primaryCurrency }) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newCat, setNewCat] = useState({ label: '', pct: '' });
+  const [newCat, setNewCat] = useState({ label: '', amt: '' });
   const [error, setError] = useState('');
-
-  // Merge core categories with any label overrides stored in customCategories metadata
   const [coreLabelOverrides, setCoreLabelOverrides] = useState({});
 
   const total = Object.values(allocations).reduce((s, v) => s + (parseFloat(v) || 0), 0);
@@ -138,35 +181,27 @@ export default function Overview({ allocations, setAllocations, customCategories
 
   const coreRows = CATEGORIES
     .filter(cat => !deletedCoreKeys.includes(cat.key))
-    .map(cat => ({
-      ...cat,
-      label: coreLabelOverrides[cat.key] || cat.label,
-    }));
+    .map(cat => ({ ...cat, label: coreLabelOverrides[cat.key] || cat.label }));
 
-  const customRows = customCategories.map(cc => ({
-    ...cc,
-    icon: 'ti-star',
-    bg: cc.color + '22',
-  }));
-
+  const customRows = customCategories.map(cc => ({ ...cc, icon: 'ti-star', bg: cc.color + '22' }));
   const allRows = [...coreRows, ...customRows];
 
-  const handleCoreRename = (key, newLabel) => {
-    setCoreLabelOverrides(prev => ({ ...prev, [key]: newLabel }));
+  // Convert an amount to a percentage of income
+  const amtToPct = (amt) => totalIncome > 0 ? (amt / totalIncome) * 100 : 0;
+
+  const handleChangeAmount = (key, newAmt) => {
+    const newPct = amtToPct(newAmt);
+    setAllocations(prev => ({ ...prev, [key]: Math.round(newPct * 10) / 10 }));
   };
 
-  const handleCustomRename = (key, newLabel) => {
-    setCustomCategories(prev => prev.map(c => c.key === key ? { ...c, label: newLabel } : c));
-  };
-
-
+  const handleCoreRename = (key, newLabel) => setCoreLabelOverrides(prev => ({ ...prev, [key]: newLabel }));
+  const handleCustomRename = (key, newLabel) => setCustomCategories(prev => prev.map(c => c.key === key ? { ...c, label: newLabel } : c));
 
   const handleDeleteCategory = (key) => {
     const isCustom = customCategories.some(c => c.key === key);
     if (isCustom) {
       setCustomCategories(prev => prev.filter(c => c.key !== key));
     } else {
-      // Hide core category by tracking its key
       setDeletedCoreKeys(prev => [...prev, key]);
     }
     setAllocations(prev => { const next = { ...prev }; delete next[key]; return next; });
@@ -175,14 +210,16 @@ export default function Overview({ allocations, setAllocations, customCategories
   const handleAdd = () => {
     if (!newCat.label.trim()) { setError('Name required'); return; }
     if (newCat.label.length > 30) { setError('Max 30 characters'); return; }
-    const allLabels = [...coreRows, ...customRows].map(c => c.label.toLowerCase());
+    const allLabels = allRows.map(c => c.label.toLowerCase());
     if (allLabels.includes(newCat.label.toLowerCase())) { setError('Name already exists'); return; }
-    if (parseFloat(newCat.pct) < 0) { setError('Must be 0 or greater'); return; }
+    const amt = parseFloat(newCat.amt) || 0;
+    if (amt < 0) { setError('Amount must be 0 or greater'); return; }
     const key = 'custom_' + crypto.randomUUID().slice(0, 8);
     const color = CUSTOM_CATEGORY_COLORS[customCategories.length % CUSTOM_CATEGORY_COLORS.length];
-    setCustomCategories(prev => [...prev, { key, label: newCat.label.trim(), color, defaultPct: parseFloat(newCat.pct) || 0 }]);
-    setAllocations(prev => ({ ...prev, [key]: parseFloat(newCat.pct) || 0 }));
-    setNewCat({ label: '', pct: '' });
+    const pct = amtToPct(amt);
+    setCustomCategories(prev => [...prev, { key, label: newCat.label.trim(), color, defaultPct: pct }]);
+    setAllocations(prev => ({ ...prev, [key]: Math.round(pct * 10) / 10 }));
+    setNewCat({ label: '', amt: '' });
     setShowAddForm(false);
     setError('');
   };
@@ -194,7 +231,7 @@ export default function Overview({ allocations, setAllocations, customCategories
           ? `Over-allocated by ${Math.abs(rem).toFixed(1)}%. Reduce some categories.`
           : rem === 0
             ? 'Fully allocated — every euro has a job.'
-            : `${rem.toFixed(1)}% unallocated — consider moving it to savings.`}
+            : `${primaryCurrency}${Math.round(free).toLocaleString()} unallocated — consider moving it to savings.`}
       </AlertBanner>
 
       {/* Summary cards */}
@@ -211,12 +248,22 @@ export default function Overview({ allocations, setAllocations, customCategories
         ))}
       </div>
 
-      {/* Hint */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+      {/* Hint row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--text-faint)' }}>Budget allocation</div>
-        <div style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 4 }}>
-          <i className="ti ti-pencil" aria-hidden="true" style={{ fontSize: 11 }} /> tap any label to rename
+        <div style={{ fontSize: 11, color: 'var(--text-faint)', display: 'flex', gap: 12 }}>
+          {!totalIncome && <span style={{ color: 'var(--amber)', fontWeight: 500 }}>Enter your income first</span>}
+          <span><i className="ti ti-pencil" aria-hidden="true" style={{ fontSize: 11 }} /> tap label to rename</span>
         </div>
+      </div>
+
+      {/* Column headers */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px 6px', marginBottom: 0 }}>
+        <div style={{ width: 36, flexShrink: 0 }} />
+        <div style={{ flex: 1, fontSize: 10, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Category</div>
+        <div style={{ width: 86, fontSize: 10, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px', textAlign: 'right' }}>Amount</div>
+        <div style={{ width: 44, fontSize: 10, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px', textAlign: 'right' }}>%</div>
+        <div style={{ width: 28, flexShrink: 0 }} />
       </div>
 
       {/* Allocation list */}
@@ -224,7 +271,7 @@ export default function Overview({ allocations, setAllocations, customCategories
         {allRows.map(cat => {
           const isCustom = customCategories.some(c => c.key === cat.key);
           const pct = parseFloat(allocations[cat.key]) || 0;
-          const amt = (totalIncome * pct) / 100;
+          const amt = totalIncome ? (totalIncome * pct) / 100 : 0;
           return (
             <AllocationRow
               key={cat.key}
@@ -233,7 +280,8 @@ export default function Overview({ allocations, setAllocations, customCategories
               amt={amt}
               currency={primaryCurrency}
               totalIncome={totalIncome}
-              onChange={val => setAllocations(prev => ({ ...prev, [cat.key]: parseFloat(val) || 0 }))}
+              onChangeAmount={(newAmt) => handleChangeAmount(cat.key, newAmt)}
+              onChangePct={(newPct) => setAllocations(prev => ({ ...prev, [cat.key]: parseFloat(newPct) || 0 }))}
               onDelete={() => handleDeleteCategory(cat.key)}
               onLabelChange={newLabel => isCustom ? handleCustomRename(cat.key, newLabel) : handleCoreRename(cat.key, newLabel)}
               canDelete={allRows.length > 1}
@@ -257,14 +305,14 @@ export default function Overview({ allocations, setAllocations, customCategories
                 style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 10px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'DM Sans, sans-serif', width: '100%', outline: 'none' }}
               />
             </div>
-            <div style={{ width: 80 }}>
-              <label style={{ fontSize: 11, color: 'var(--text-faint)', display: 'block', marginBottom: 4 }}>%</label>
+            <div style={{ width: 100 }}>
+              <label style={{ fontSize: 11, color: 'var(--text-faint)', display: 'block', marginBottom: 4 }}>Amount ({primaryCurrency})</label>
               <input
-                type="number" min="0" value={newCat.pct}
-                onChange={e => setNewCat(p => ({ ...p, pct: e.target.value }))}
+                type="number" min="0" value={newCat.amt}
+                onChange={e => setNewCat(p => ({ ...p, amt: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
                 placeholder="0"
-                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 10px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'DM Sans, sans-serif', width: '100%', outline: 'none' }}
+                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 10px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'Sora, sans-serif', width: '100%', outline: 'none' }}
               />
             </div>
             <button onClick={handleAdd} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Add</button>
@@ -275,12 +323,7 @@ export default function Overview({ allocations, setAllocations, customCategories
       ) : (
         <button
           onClick={() => setShowAddForm(true)}
-          style={{
-            background: 'var(--bg-surface)', border: '1.5px dashed var(--border-mid)', borderRadius: 10,
-            color: 'var(--text-faint)', padding: '13px 18px', fontFamily: 'DM Sans, sans-serif',
-            fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center',
-            gap: 8, width: '100%', transition: 'all 0.15s',
-          }}
+          style={{ background: 'var(--bg-surface)', border: '1.5px dashed var(--border-mid)', borderRadius: 10, color: 'var(--text-faint)', padding: '13px 18px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%', transition: 'all 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-mid)'; e.currentTarget.style.color = 'var(--text-faint)'; }}
         >
@@ -291,24 +334,16 @@ export default function Overview({ allocations, setAllocations, customCategories
       {/* Restore deleted core categories */}
       {deletedCoreKeys.length > 0 && (
         <div style={{ marginTop: 12, padding: '12px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 8 }}>
-            Removed categories
-          </div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 8 }}>Removed categories</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {CATEGORIES.filter(c => deletedCoreKeys.includes(c.key)).map(cat => (
               <button
                 key={cat.key}
                 onClick={() => {
                   setDeletedCoreKeys(prev => prev.filter(k => k !== cat.key));
-                  setAllocations(prev => ({ ...prev, [cat.key]: cat.defaultPct || 0 }));
+                  setAllocations(prev => ({ ...prev, [cat.key]: 0 }));
                 }}
-                style={{
-                  background: 'var(--bg-input)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '6px 12px', fontSize: 13,
-                  color: 'var(--text-muted)', cursor: 'pointer',
-                  fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6,
-                  transition: 'all 0.15s',
-                }}
+                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
                 aria-label={`Restore ${cat.label} category`}
