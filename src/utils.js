@@ -13,12 +13,19 @@ export function formatCurrency(amount, currency, income = 1) {
   return currency + Math.round(amount).toLocaleString();
 }
 
+// Convert amount from one currency to another via EUR as base
+// Used ONLY for multi-source income where sources differ in currency
 export function toPrimary(amount, from, primary) {
-  return (amount * (EXCHANGE_RATES[from] || 1)) / (EXCHANGE_RATES[primary] || 1);
+  if (from === primary) return amount;
+  const inEUR = amount / (EXCHANGE_RATES[from] || 1);
+  return inEUR * (EXCHANGE_RATES[primary] || 1);
 }
 
+// Sum all income sources, converting each to primary currency
 export function calcTotalIncome(incomeSources, primaryCurrency) {
-  return incomeSources.reduce((sum, s) => sum + toPrimary(s.amount || 0, s.currency, primaryCurrency), 0);
+  return incomeSources.reduce((sum, s) => {
+    return sum + toPrimary(s.amount || 0, s.currency, primaryCurrency);
+  }, 0);
 }
 
 export function calcInvestables(allocations, totalIncome) {
@@ -40,7 +47,7 @@ export function detectBillClusters(bills) {
     if (used.has(i)) continue;
     const group = [withDays[i]];
     for (let j = i + 1; j < withDays.length; j++) {
-      if (Math.abs(withDays[i].days - withDays[j].days) <= 3) {
+      if (!used.has(j) && Math.abs(withDays[i].days - withDays[j].days) <= 3) {
         group.push(withDays[j]);
         used.add(j);
       }
@@ -125,11 +132,11 @@ export function generateCSV(state, totalIncome) {
     { key: 'rent', label: 'Rent / Mortgage' }, { key: 'food', label: 'Food & Groceries' },
     { key: 'transport', label: 'Fuel / Transport' }, { key: 'leisure', label: 'Leisure' },
     { key: 'bills', label: 'Recurring Bills' },
-    ...state.customCategories.map(cc => ({ key: cc.key, label: cc.label })),
+    ...(state.customCategories || []).map(cc => ({ key: cc.key, label: cc.label })),
   ];
   let csv = `BudgetFQ Report — ${monthLabel}\n"Smart budgeting for real life"\n\n`;
   csv += `INCOME\nSource,Amount,Currency\n`;
-  state.incomeSources.forEach(s => { csv += `"${s.label}",${s.amount},${s.currency}\n`; });
+  (state.incomeSources || []).forEach(s => { csv += `"${s.label}",${s.amount},${s.currency}\n`; });
   csv += `\nALLOCATIONS\nCategory,Percentage,Monthly Amount\n`;
   allCats.forEach(cat => {
     const pct = state.allocations[cat.key] || 0;
@@ -137,7 +144,7 @@ export function generateCSV(state, totalIncome) {
     csv += `"${cat.label}",${pct}%,${c}${Math.round(amt)}\n`;
   });
   csv += `\nBILLS\nName,Amount,Due Day,Category,Recurring,Paid\n`;
-  state.bills.forEach(b => {
+  (state.bills || []).forEach(b => {
     const catLabel = allCats.find(c => c.key === b.category)?.label || b.category;
     csv += `"${b.name}",${c}${b.amount},${b.dueDay},"${catLabel}",${b.recurring ? 'Yes' : 'No'},${b.paid ? 'Yes' : 'No'}\n`;
   });

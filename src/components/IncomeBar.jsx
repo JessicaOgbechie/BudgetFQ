@@ -133,7 +133,7 @@ export default function IncomeBar({ incomeSources, setIncomeSources, primaryCurr
                   color: 'var(--text-primary)', cursor: 'pointer',
                 }}
               >
-                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
               </select>
               {incomeSources.length > 1 && (
                 <button
