@@ -58,7 +58,7 @@ export default function WhatIfSimulator({ totalIncome, primaryCurrency }) {
           <div key={label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
             <div style={{ fontSize: 11, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 6 }}>{label}</div>
             <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: label === 'Monthly saving' ? 'var(--text-primary)' : 'var(--accent)' }}>
-              {primaryCurrency}{Math.round(val).toLocaleString()}
+              {combined > 0 ? primaryCurrency + Math.round(val).toLocaleString() : '—'}
             </div>
           </div>
         ))}

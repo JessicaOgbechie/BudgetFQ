@@ -35,7 +35,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChangeAmount, o
     onChangeAmount(num);
   };
 
-  const displayAmt = amtFocused ? amtDraft : (totalIncome ? Math.round(amt).toString() : '');
+  const displayAmt = amtFocused ? amtDraft : (amt > 0 && totalIncome ? Math.round(amt).toString() : '');
 
   return (
     <div
@@ -92,7 +92,7 @@ function AllocationRow({ cat, pct, amt, currency, totalIncome, onChangeAmount, o
             min="0"
             step="1"
             value={displayAmt}
-            placeholder={totalIncome ? '0' : '—'}
+            placeholder="0"
             disabled={!totalIncome}
             onFocus={handleAmtFocus}
             onChange={e => handleAmtChange(e.target.value)}

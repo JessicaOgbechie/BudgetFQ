@@ -15,6 +15,8 @@ import AlertBanner from './components/AlertBanner';
 
 const PRIMARY_KEY = 'budgetfq_v1';
 const HISTORY_KEY = 'budgetfq_history_v1';
+// Bump this version whenever we need to reset stored data to new defaults
+const DATA_VERSION = 2;
 
 function loadStore(key, fallback) {
   try {
@@ -25,6 +27,12 @@ function loadStore(key, fallback) {
 
 function saveStore(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { }
+}
+
+// Old default allocations that were pre-filled — detect and reset to zero
+const OLD_DEFAULTS = { savings: 20, loans: 10, rent: 30, food: 12, transport: 8, leisure: 8, bills: 7 };
+function isOldDefaultAllocations(allocations) {
+  return Object.entries(OLD_DEFAULTS).every(([k, v]) => (parseFloat(allocations[k]) || 0) === v);
 }
 
 export default function App() {
@@ -52,22 +60,33 @@ export default function App() {
     customCategories, investProfile, salaryDay, lastOpenedMonth, totalIncome,
   }), [incomeSources, primaryCurrency, allocations, bills, customCategories, investProfile, salaryDay, lastOpenedMonth, totalIncome]);
 
+  // Load on mount
   useEffect(() => {
     try { localStorage.setItem('_test', '1'); localStorage.removeItem('_test'); }
     catch { setStorageAvailable(false); }
 
     const saved = loadStore(PRIMARY_KEY, null);
     const savedHistory = loadStore(HISTORY_KEY, []);
+    const savedVersion = loadStore('budgetfq_version', 1);
 
     if (saved) {
       if (saved.incomeSources) setIncomeSources(saved.incomeSources);
       if (saved.primaryCurrency) setPrimaryCurrency(saved.primaryCurrency);
-      if (saved.allocations) setAllocations(saved.allocations);
       if (saved.customCategories) setCustomCategories(saved.customCategories);
       if (saved.deletedCoreKeys) setDeletedCoreKeys(saved.deletedCoreKeys);
       if (saved.investProfile !== undefined) setInvestProfile(saved.investProfile);
       if (saved.salaryDay) setSalaryDay(saved.salaryDay);
 
+      // Migration: if saved allocations are the old pre-filled defaults, reset to zero
+      if (saved.allocations) {
+        if (savedVersion < DATA_VERSION && isOldDefaultAllocations(saved.allocations)) {
+          setAllocations(defaultState.allocations); // all zeros
+        } else {
+          setAllocations(saved.allocations);
+        }
+      }
+
+      // Migration: reset old pre-filled bill amounts to zero
       if (saved.bills) {
         const thisMonth = currentMonthId();
         const isNewMonth = saved.lastOpenedMonth && saved.lastOpenedMonth !== thisMonth;
@@ -82,10 +101,19 @@ export default function App() {
           }
         }
         setHistory(newHistory);
-        setBills(isNewMonth ? saved.bills.map(b => ({ ...b, paid: false })) : saved.bills);
+
+        let loadedBills = isNewMonth ? saved.bills.map(b => ({ ...b, paid: false })) : saved.bills;
+        // Migration v2: reset old default bill amounts (80, 45, 30, 35) to zero
+        if (savedVersion < DATA_VERSION) {
+          loadedBills = loadedBills.map(b => ({ ...b, amount: b.amount > 0 && [80, 45, 30, 35].includes(b.amount) ? 0 : b.amount }));
+        }
+        setBills(loadedBills);
       } else {
         setHistory(savedHistory);
       }
+
+      // Save updated version flag
+      saveStore('budgetfq_version', DATA_VERSION);
     } else {
       setHistory(savedHistory);
     }
@@ -94,6 +122,7 @@ export default function App() {
     setInitialized(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Save on state change
   useEffect(() => {
     if (!initialized) return;
     saveStore(PRIMARY_KEY, { incomeSources, primaryCurrency, allocations, bills, customCategories, deletedCoreKeys, investProfile, salaryDay, lastOpenedMonth: currentMonthId() });
@@ -109,19 +138,20 @@ export default function App() {
       <Header primaryCurrency={primaryCurrency} setPrimaryCurrency={setPrimaryCurrency} state={state} totalIncome={totalIncome} />
       <IncomeBar incomeSources={incomeSources} setIncomeSources={setIncomeSources} primaryCurrency={primaryCurrency} totalIncome={totalIncome} unallocated={unallocated} />
       <TabBar activeTab={activeTab} setActiveTab={setActiveTab} />
+
       <main style={{ padding: 'clamp(12px, 4vw, 24px)', maxWidth: 880, margin: '0 auto' }}>
         {!storageAvailable && (
           <AlertBanner variant="warning" style={{ marginBottom: 16 }}>
             Data will not be saved in this session. localStorage is unavailable.
           </AlertBanner>
         )}
-        {activeTab === 'overview' && <Overview allocations={allocations} setAllocations={setAllocations} customCategories={customCategories} setCustomCategories={setCustomCategories} deletedCoreKeys={deletedCoreKeys} setDeletedCoreKeys={setDeletedCoreKeys} totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
-        {activeTab === 'bills' && <PriorityBills bills={bills} setBills={setBills} primaryCurrency={primaryCurrency} />}
-        {activeTab === 'invest' && <InvestScore allocations={allocations} totalIncome={totalIncome} primaryCurrency={primaryCurrency} investProfile={investProfile} setInvestProfile={setInvestProfile} />}
-        {activeTab === 'whatif' && <WhatIfSimulator totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
-        {activeTab === 'forecast' && <ForecastTab allocations={allocations} totalIncome={totalIncome} primaryCurrency={primaryCurrency} bills={bills} salaryDay={salaryDay} setSalaryDay={setSalaryDay} />}
-        {activeTab === 'history' && <HistoryTab history={history} setHistory={setHistory} state={state} />}
-        {activeTab === 'ratio' && <RatioChecker allocations={allocations} />}
+        {activeTab === 'overview'  && <Overview allocations={allocations} setAllocations={setAllocations} customCategories={customCategories} setCustomCategories={setCustomCategories} deletedCoreKeys={deletedCoreKeys} setDeletedCoreKeys={setDeletedCoreKeys} totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
+        {activeTab === 'bills'     && <PriorityBills bills={bills} setBills={setBills} primaryCurrency={primaryCurrency} />}
+        {activeTab === 'invest'    && <InvestScore allocations={allocations} totalIncome={totalIncome} primaryCurrency={primaryCurrency} investProfile={investProfile} setInvestProfile={setInvestProfile} />}
+        {activeTab === 'whatif'    && <WhatIfSimulator totalIncome={totalIncome} primaryCurrency={primaryCurrency} />}
+        {activeTab === 'forecast'  && <ForecastTab allocations={allocations} totalIncome={totalIncome} primaryCurrency={primaryCurrency} bills={bills} salaryDay={salaryDay} setSalaryDay={setSalaryDay} />}
+        {activeTab === 'history'   && <HistoryTab history={history} setHistory={setHistory} state={state} />}
+        {activeTab === 'ratio'     && <RatioChecker allocations={allocations} />}
       </main>
     </div>
   );
