@@ -136,3 +136,52 @@ export const FAQ_ITEMS = [
     a: 'No. The AI adviser provides general financial education only. It is not a licensed financial adviser. Always consult a qualified professional before making investment decisions.',
   },
 ];
+
+export const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'fr', label: 'French' },
+  { code: 'yo', label: 'Yoruba' },
+  { code: 'ig', label: 'Igbo' },
+  { code: 'ha', label: 'Hausa' },
+  { code: 'sw', label: 'Swahili' },
+  { code: 'de', label: 'German' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'pt', label: 'Portuguese' },
+];
+
+export const COUNTRIES = [
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+];
+
+export const AVATARS = ['😊','🧑','👩','👨','🧕','👳','🧔','👩‍💼','👨‍💼','🦸','🧑‍🎓','👩‍🦱','👨‍🦱','🧑‍🦰','😎','🤓'];
+
+export const DEFAULT_PROFILE = {
+  name: '',
+  avatar: '😊',
+  country: '',
+  language: 'en',
+  notifications: false,
+};
+
+export const GOAL_PRESETS = [
+  { label: 'Emergency Fund', icon: '🛡️' },
+  { label: 'Vacation',       icon: '✈️' },
+  { label: 'Home Purchase',  icon: '🏠' },
+  { label: 'Vehicle',        icon: '🚗' },
+  { label: 'Education',      icon: '🎓' },
+  { label: 'Custom Goal',    icon: '⭐' },
+];

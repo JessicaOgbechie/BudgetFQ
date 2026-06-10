@@ -95,7 +95,8 @@ export default function PriorityBills({ bills, setBills, primaryCurrency }) {
       ) : (
         sorted.map(bill => {
           const days = getDaysUntil(bill.dueDay);
-          const uc = urgencyColor(days);
+          const hasAmount = bill.amount > 0;
+          const uc = hasAmount ? urgencyColor(days) : 'var(--border-mid)';
           const icon = BILL_ICONS[bill.category] || 'ti-receipt';
           const chipColor = bill.paid ? '#9CA3AF' : (BILL_COLORS[bill.category] || 'var(--accent)');
           const chipBg = bill.paid ? '#F3F4F6' : (BILL_BG[bill.category] || 'var(--accent-light)');
@@ -114,8 +115,8 @@ export default function PriorityBills({ bills, setBills, primaryCurrency }) {
                     {bill.paid && <span style={{ color: 'var(--accent)', marginLeft: 4 }}>· ✓ Paid</span>}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: bill.paid ? 'var(--text-faint)' : 'var(--text-primary)', marginRight: 4 }}>{primaryCurrency}{bill.amount}</div>
-                {!bill.paid && <div style={{ fontSize: 12, fontWeight: 600, color: uc, width: 64, textAlign: 'right' }}>{days === 0 ? 'Due today!' : `in ${days}d`}</div>}
+                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: bill.paid ? 'var(--text-faint)' : 'var(--text-primary)', marginRight: 4 }}>{bill.amount > 0 ? primaryCurrency + bill.amount : '—'}</div>
+                {!bill.paid && hasAmount && <div style={{ fontSize: 12, fontWeight: 600, color: uc, width: 64, textAlign: 'right' }}>{days === 0 ? 'Due today!' : `in ${days}d`}</div>}
                 {bill.paid && <div style={{ width: 64 }} />}
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginLeft: 4 }}>
                   <input type="checkbox" checked={bill.paid} onChange={() => togglePaid(bill.id)} aria-label={`Mark ${bill.name} as ${bill.paid ? 'unpaid' : 'paid'}`} style={{ accentColor: 'var(--accent)', width: 15, height: 15, cursor: 'pointer' }} />
