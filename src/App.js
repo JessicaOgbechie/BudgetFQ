@@ -44,7 +44,16 @@ export default function App() {
 
   // ── Core state ──────────────────────────────────────────
   const [incomeSources,    setIncomeSources]    = useState(def.incomeSources);
-  const [primaryCurrency,  setPrimaryCurrency]  = useState(def.primaryCurrency);
+  const [primaryCurrency,  setPrimaryCurrencyRaw]  = useState(def.primaryCurrency);
+
+  // When primary currency changes, update the first income source to match
+  // so single-source users don't get accidental conversion
+  const setPrimaryCurrency = (newCurrency) => {
+    setPrimaryCurrencyRaw(newCurrency);
+    setIncomeSources(prev => prev.map((src, i) =>
+      i === 0 ? { ...src, currency: newCurrency } : src
+    ));
+  };
   const [allocations,      setAllocations]      = useState(def.allocations);
   const [bills,            setBills]            = useState(def.bills);
   const [customCategories, setCustomCategories] = useState(def.customCategories);
@@ -85,7 +94,14 @@ export default function App() {
     if (savedProfile) setProfile({ ...DEFAULT_PROFILE, ...savedProfile });
 
     if (saved) {
-      if (saved.incomeSources)   setIncomeSources(saved.incomeSources);
+      if (saved.incomeSources) {
+        // Sync first source currency to primaryCurrency to prevent conversion bug
+        const pc = saved.primaryCurrency || '€';
+        const synced = saved.incomeSources.map((src, i) =>
+          i === 0 ? { ...src, currency: pc } : src
+        );
+        setIncomeSources(synced);
+      }
       if (saved.primaryCurrency) setPrimaryCurrency(saved.primaryCurrency);
       if (saved.customCategories)setCustomCategories(saved.customCategories);
       if (saved.deletedCoreKeys) setDeletedCoreKeys(saved.deletedCoreKeys);
